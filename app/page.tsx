@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -51,7 +51,15 @@ import {
   LogOut,
 } from "lucide-react"
 
+// Import necessary modules for authentication and redirection
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { useMovies, useMoviesByGenre } from "@/hooks/useMovies"
+
 export default function PeliculitaApp() {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
   const [currentScreen, setCurrentScreen] = useState("home")
   const [selectedMood, setSelectedMood] = useState("")
   const [selectedGenre, setSelectedGenre] = useState("")
@@ -66,6 +74,48 @@ export default function PeliculitaApp() {
     watchingFrequency: "",
     preferredMoods: [] as string[],
   })
+
+  // Added client-side auth check with proper handling
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase.auth.getUser()
+
+        if (error || !data?.user) {
+          router.push("/auth/login")
+          return
+        }
+
+        setUser(data.user)
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Auth check failed:", error)
+        router.push("/auth/login")
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  // API hooks para obtener datos de películas
+  const { movies: allMovies, loading: moviesLoading, error: moviesError } = useMovies()
+  const { movies: genreMovies, loading: genreLoading, error: genreError } = useMoviesByGenre(selectedGenre || null)
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   const genres = [
     { name: "Acción", icon: Sword, color: "text-red-500", description: "Aventuras llenas de adrenalina" },
@@ -93,498 +143,6 @@ export default function PeliculitaApp() {
 
   const frequencies = ["Diariamente", "Varias veces por semana", "Una vez por semana", "Ocasionalmente"]
 
-  const allMovies = [
-    {
-      id: 1,
-      title: "Dune: Parte Dos",
-      genre: "Ciencia Ficción",
-      rating: 8.5,
-      year: 2024,
-      duration: "166 min",
-      director: "Denis Villeneuve",
-      cast: ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Oscar Isaac"],
-      poster: "/dune-part-two-poster.png",
-      mood: "Épico",
-      description:
-        "Paul Atreides se une a Chani y los Fremen mientras busca venganza contra los conspiradores que destruyeron a su familia. Enfrentando una elección entre el amor de su vida y el destino del universo conocido, se esfuerza por prevenir un futuro terrible que solo él puede prever.",
-      synopsis:
-        "La segunda parte de la adaptación de Denis Villeneuve de la novela clásica de Frank Herbert. Paul Atreides continúa su viaje épico mientras navega por la política, la religión y las fuerzas que luchan por el control del planeta desértico Arrakis.",
-      tags: ["Épico", "Aventura", "Futurista"],
-      releaseDate: "2024-03-01",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$190M",
-      boxOffice: "$711M",
-    },
-    {
-      id: 2,
-      title: "Spider-Man: Cruzando el Multiverso",
-      genre: "Animación",
-      rating: 9.0,
-      year: 2023,
-      duration: "140 min",
-      director: "Joaquim Dos Santos",
-      cast: ["Shameik Moore", "Hailee Steinfeld", "Brian Tyree Henry", "Luna Lauren Vélez"],
-      poster: "/spider-man-across-spider-verse-poster.png",
-      mood: "Aventurero",
-      description:
-        "Miles Morales regresa para la próxima aventura en la saga ganadora del Oscar Spider-Verse. Después de reunirse con Gwen Stacy, el amigable Spider-Man del vecindario de Brooklyn es catapultado a través del Multiverso.",
-      synopsis:
-        "Una secuela revolucionaria que expande el universo Spider-Verse con una animación innovadora y una narrativa emocionalmente resonante sobre el crecimiento y la responsabilidad.",
-      tags: ["Superhéroes", "Multiverso", "Familia"],
-      releaseDate: "2023-06-02",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$100M",
-      boxOffice: "$690M",
-    },
-    {
-      id: 3,
-      title: "Oppenheimer",
-      genre: "Drama",
-      rating: 8.7,
-      year: 2023,
-      duration: "180 min",
-      director: "Christopher Nolan",
-      cast: ["Cillian Murphy", "Emily Blunt", "Robert Downey Jr.", "Matt Damon"],
-      poster: "/images/posters/oppenheimer-poster.png",
-      mood: "Pensativo",
-      description:
-        "La historia del físico teórico estadounidense J. Robert Oppenheimer, su papel en el Proyecto Manhattan y el desarrollo de la bomba atómica durante la Segunda Guerra Mundial.",
-      synopsis:
-        "Un thriller biográfico épico que examina el enigma del hombre que debe arriesgar destruir el mundo para salvarlo. Una exploración de la genialidad, la ambición y las consecuencias.",
-      tags: ["Biografía", "Historia", "Guerra"],
-      releaseDate: "2023-07-21",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$100M",
-      boxOffice: "$952M",
-    },
-    {
-      id: 4,
-      title: "Barbie",
-      genre: "Comedia",
-      rating: 7.8,
-      year: 2023,
-      duration: "114 min",
-      director: "Greta Gerwig",
-      cast: ["Margot Robbie", "Ryan Gosling", "America Ferrera", "Kate McKinnon"],
-      poster: "/barbie-movie-poster.png",
-      mood: "Feliz",
-      description:
-        "Barbie y Ken están teniendo el tiempo de sus vidas en el colorido y aparentemente perfecto mundo de Barbie Land. Sin embargo, cuando tienen la oportunidad de ir al mundo real, pronto descubren las alegrías y peligros de vivir entre los humanos.",
-      synopsis:
-        "Una comedia subversiva que examina los temas de perfección, identidad y lo que significa ser humano a través del lente del icónico juguete.",
-      tags: ["Comedia", "Fantasía", "Sátira"],
-      releaseDate: "2023-07-21",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$145M",
-      boxOffice: "$1.446B",
-    },
-    {
-      id: 5,
-      title: "John Wick 4",
-      genre: "Acción",
-      rating: 8.2,
-      year: 2023,
-      duration: "169 min",
-      director: "Chad Stahelski",
-      cast: ["Keanu Reeves", "Donnie Yen", "Bill Skarsgård", "Laurence Fishburne"],
-      poster: "/john-wick-4-poster.png",
-      mood: "Emocionado",
-      description:
-        "John Wick descubre un camino para derrotar a la Mesa Alta. Pero antes de que pueda ganar su libertad, Wick debe enfrentarse a un nuevo enemigo con poderosas alianzas en todo el mundo.",
-      synopsis:
-        "La cuarta entrega de la saga de acción que lleva las secuencias de combate coreografiadas y el mundo building a nuevas alturas cinematográficas.",
-      tags: ["Acción", "Thriller", "Venganza"],
-      releaseDate: "2023-03-24",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$90M",
-      boxOffice: "$440M",
-    },
-    {
-      id: 6,
-      title: "La Sirenita",
-      genre: "Fantasía",
-      rating: 7.5,
-      year: 2023,
-      duration: "135 min",
-      director: "Rob Marshall",
-      cast: ["Halle Bailey", "Jonah Hauer-King", "Melissa McCarthy", "Javier Bardem"],
-      poster: "/little-mermaid-2023-poster.png",
-      mood: "Nostálgico",
-      description:
-        "La versión de acción real del clásico animado de Disney sobre una joven sirena que hace un trato con una bruja del mar para intercambiar su hermosa voz por piernas humanas.",
-      synopsis:
-        "Una reimaginación musical vibrante del cuento clásico que combina nostalgia con una nueva perspectiva contemporánea.",
-      tags: ["Musical", "Fantasía", "Romance"],
-      releaseDate: "2023-05-26",
-      country: "Estados Unidos",
-      language: "Inglés",
-      budget: "$250M",
-      boxOffice: "$569M",
-    },
-  ]
-
-  const moodMovies = {
-    Feliz: [
-      {
-        id: 7,
-        title: "Barbie",
-        genre: "Comedia",
-        rating: 7.8,
-        year: 2023,
-        poster: "/barbie-movie-poster.png",
-        description: "Una aventura colorida y divertida en el mundo de Barbie",
-      },
-      {
-        id: 8,
-        title: "Paddington 2",
-        genre: "Familia",
-        rating: 8.8,
-        year: 2017,
-        poster: "/paddington-2-movie-poster.png",
-        description: "El oso más querido regresa con más aventuras encantadoras",
-      },
-      {
-        id: 9,
-        title: "La La Land",
-        genre: "Musical",
-        rating: 8.0,
-        year: 2016,
-        poster: "/la-la-land-movie-poster.png",
-        description: "Un musical romántico lleno de color y música",
-      },
-    ],
-    Emocionado: [
-      {
-        id: 10,
-        title: "John Wick 4",
-        genre: "Acción",
-        rating: 8.2,
-        year: 2023,
-        poster: "/john-wick-4-poster.png",
-        description: "Acción intensa y coreografías de combate espectaculares",
-      },
-      {
-        id: 11,
-        title: "Top Gun: Maverick",
-        genre: "Acción",
-        rating: 8.7,
-        year: 2022,
-        poster: "/top-gun-maverick-movie-poster.png",
-        description: "Secuelas épicas con escenas aéreas impresionantes",
-      },
-      {
-        id: 12,
-        title: "Mad Max: Fury Road",
-        genre: "Acción",
-        rating: 8.1,
-        year: 2015,
-        poster: "/mad-max-fury-road-movie-poster.png",
-        description: "Acción post-apocalíptica sin parar",
-      },
-    ],
-    Pensativo: [
-      {
-        id: 13,
-        title: "Oppenheimer",
-        genre: "Drama",
-        rating: 8.7,
-        year: 2023,
-        poster: "/images/posters/oppenheimer-poster.png",
-        description: "Un drama histórico profundo sobre el padre de la bomba atómica",
-      },
-      {
-        id: 14,
-        title: "Arrival",
-        genre: "Ciencia Ficción",
-        rating: 7.9,
-        year: 2016,
-        poster: "/arrival-movie-poster-amy-adams.png",
-        description: "Ciencia ficción intelectual sobre comunicación alienígena",
-      },
-      {
-        id: 15,
-        title: "Blade Runner 2049",
-        genre: "Ciencia Ficción",
-        rating: 8.0,
-        year: 2017,
-        poster: "/blade-runner-2049-poster.png",
-        description: "Una secuela visualmente impresionante que explora la humanidad",
-      },
-    ],
-    Aventurero: [
-      {
-        id: 16,
-        title: "Spider-Man: Cruzando el Multiverso",
-        genre: "Animación",
-        rating: 9.0,
-        year: 2023,
-        poster: "/spider-man-across-spider-verse-poster.png",
-        description: "Una aventura animada a través del multiverso",
-      },
-      {
-        id: 17,
-        title: "Indiana Jones 5",
-        genre: "Aventura",
-        rating: 7.1,
-        year: 2023,
-        poster: "/indiana-jones-5-movie-poster.png",
-        description: "La última aventura del arqueólogo más famoso",
-      },
-      {
-        id: 18,
-        title: "Dune: Parte Dos",
-        genre: "Ciencia Ficción",
-        rating: 8.5,
-        year: 2024,
-        poster: "/dune-part-two-poster.png",
-        description: "Épica espacial llena de aventuras en planetas desérticos",
-      },
-    ],
-    Nostálgico: [
-      {
-        id: 19,
-        title: "La Sirenita",
-        genre: "Fantasía",
-        rating: 7.5,
-        year: 2023,
-        poster: "/little-mermaid-2023-poster.png",
-        description: "Una nueva versión del clásico cuento de Disney",
-      },
-      {
-        id: 20,
-        title: "Casablanca",
-        genre: "Romance",
-        rating: 8.5,
-        year: 1942,
-        poster: "/casablanca-movie-poster-classic.png",
-        description: "El clásico romance de todos los tiempos",
-      },
-      {
-        id: 21,
-        title: "E.T. el Extraterrestre",
-        genre: "Ciencia Ficción",
-        rating: 7.9,
-        year: 1982,
-        poster: "/et-extraterrestrial-movie-poster.png",
-        description: "La historia conmovedora de amistad intergaláctica",
-      },
-    ],
-    Romántico: [
-      {
-        id: 22,
-        title: "Titanic",
-        genre: "Romance",
-        rating: 7.9,
-        year: 1997,
-        poster: "/titanic-movie-poster-leonardo-dicaprio.png",
-        description: "La historia de amor más épica del cine",
-      },
-      {
-        id: 23,
-        title: "El Diario de Noah",
-        genre: "Romance",
-        rating: 7.8,
-        year: 2004,
-        poster: "/the-notebook-movie-poster.png",
-        description: "Una historia de amor que trasciende el tiempo",
-      },
-      {
-        id: 24,
-        title: "Orgullo y Prejuicio",
-        genre: "Romance",
-        rating: 7.8,
-        year: 2005,
-        poster: "/pride-prejudice-movie-poster-keira-knightley.png",
-        description: "Adaptación romántica de la novela clásica de Jane Austen",
-      },
-    ],
-    Triste: [
-      {
-        id: 25,
-        title: "Inside Out",
-        genre: "Animación",
-        rating: 8.1,
-        year: 2015,
-        poster: "/inside-out-pixar-movie-poster.png",
-        description: "Una exploración emotiva de los sentimientos humanos",
-      },
-      {
-        id: 26,
-        title: "Manchester by the Sea",
-        genre: "Drama",
-        rating: 7.8,
-        year: 2016,
-        poster: "/manchester-by-the-sea-movie-poster.png",
-        description: "Un drama profundo sobre pérdida y redención",
-      },
-      {
-        id: 27,
-        title: "Her",
-        genre: "Drama",
-        rating: 8.0,
-        year: 2013,
-        poster: "/her-movie-poster-joaquin-phoenix.png",
-        description: "Una reflexión melancólica sobre el amor y la soledad",
-      },
-    ],
-    Relajado: [
-      {
-        id: 28,
-        title: "Mi Vecino Totoro",
-        genre: "Animación",
-        rating: 8.2,
-        year: 1988,
-        poster: "/my-neighbor-totoro-movie-poster.png",
-        description: "Una historia tranquila y mágica de Studio Ghibli",
-      },
-      {
-        id: 29,
-        title: "Lost in Translation",
-        genre: "Drama",
-        rating: 7.7,
-        year: 2003,
-        poster: "/lost-in-translation-movie-poster.png",
-        description: "Un drama contemplativo sobre conexiones humanas",
-      },
-      {
-        id: 30,
-        title: "El Gran Hotel Budapest",
-        genre: "Comedia",
-        rating: 8.1,
-        year: 2014,
-        poster: "/grand-budapest-hotel-movie-poster.png",
-        description: "Una comedia visualmente elegante y relajante",
-      },
-    ],
-  }
-
-  const genreMovies = {
-    accion: [
-      {
-        id: 1,
-        title: "Mission: Impossible 7",
-        poster: "/mission-impossible-7-poster.png",
-        rating: 8.2,
-        year: 2023,
-        description: "Ethan Hunt regresa en su misión más peligrosa hasta la fecha.",
-      },
-      {
-        id: 2,
-        title: "Mad Max: Fury Road",
-        poster: "/mad-max-fury-road-movie-poster.png",
-        rating: 8.1,
-        year: 2015,
-        description: "Una persecución épica en un mundo post-apocalíptico.",
-      },
-      {
-        id: 3,
-        title: "John Wick 4",
-        poster: "/john-wick-4-poster.png",
-        rating: 7.8,
-        year: 2023,
-        description: "John Wick busca venganza contra la Mesa Alta.",
-      },
-    ],
-    comedia: [
-      {
-        id: 4,
-        title: "Barbie",
-        poster: "/barbie-movie-poster.png",
-        rating: 7.2,
-        year: 2023,
-        description: "Una aventura colorida en el mundo de Barbie.",
-      },
-      {
-        id: 5,
-        title: "Paddington 2",
-        poster: "/paddington-2-movie-poster.png",
-        rating: 8.0,
-        year: 2017,
-        description: "El oso más querido regresa con nuevas aventuras.",
-      },
-    ],
-    drama: [
-      {
-        id: 6,
-        title: "Oppenheimer",
-        poster: "/images/posters/oppenheimer-poster.png",
-        rating: 8.4,
-        year: 2023,
-        description: "La historia del padre de la bomba atómica.",
-      },
-      {
-        id: 7,
-        title: "Casablanca",
-        poster: "/casablanca-movie-poster-classic.png",
-        rating: 8.5,
-        year: 1942,
-        description: "Un clásico romántico en tiempos de guerra.",
-      },
-    ],
-    cienciaFiccion: [
-      {
-        id: 8,
-        title: "Dune: Part Two",
-        poster: "/dune-part-two-poster.png",
-        rating: 8.6,
-        year: 2024,
-        description: "Paul Atreides continúa su épico viaje.",
-      },
-      {
-        id: 9,
-        title: "Blade Runner 2049",
-        poster: "/blade-runner-2049-poster.png",
-        rating: 8.0,
-        year: 2017,
-        description: "Una secuela digna del clásico cyberpunk.",
-      },
-    ],
-    terror: [
-      {
-        id: 10,
-        title: "The Conjuring",
-        poster: "/conjuring-poster.png",
-        rating: 7.5,
-        year: 2013,
-        description: "Los Warren investigan una casa embrujada.",
-      },
-    ],
-    romance: [
-      {
-        id: 11,
-        title: "La La Land",
-        poster: "/la-la-land-movie-poster.png",
-        rating: 8.0,
-        year: 2016,
-        description: "Un musical romántico en Los Ángeles.",
-      },
-    ],
-    aventura: [
-      {
-        id: 12,
-        title: "Indiana Jones 5",
-        poster: "/indiana-jones-5-movie-poster.png",
-        rating: 6.9,
-        year: 2023,
-        description: "La última aventura del arqueólogo más famoso.",
-      },
-    ],
-    animacion: [
-      {
-        id: 13,
-        title: "Spider-Man: Across the Spider-Verse",
-        poster: "/spider-man-across-spider-verse-poster.png",
-        rating: 8.7,
-        year: 2023,
-        description: "Miles Morales viaja a través del multiverso.",
-      },
-    ],
-  }
 
   const BottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border">
@@ -914,10 +472,10 @@ export default function PeliculitaApp() {
                     <div className="p-3">
                       <h3 className="font-medium text-sm line-clamp-2 mb-1">{movie.title}</h3>
                       <p className="text-xs text-muted-foreground">
-                        {movie.genre} • {movie.year}
+                        {movie.genres?.name} • {movie.year}
                       </p>
                       <Badge variant="outline" className="text-xs mt-1">
-                        {movie.mood}
+                        ⭐ {movie.rating}
                       </Badge>
                     </div>
                   </CardContent>
@@ -928,15 +486,9 @@ export default function PeliculitaApp() {
 
           {/* Trending Now */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-secondary" />
-                <h2 className="text-lg font-semibold">Tendencias</h2>
-              </div>
-              <Button variant="ghost" size="sm">
-                Ver todas
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-5 h-5 text-secondary" />
+              <h2 className="text-lg font-semibold">Tendencias</h2>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {allMovies.slice(0, 3).map((movie) => (
@@ -1031,12 +583,23 @@ export default function PeliculitaApp() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Películas de {selectedGenre}</h2>
                 <Badge variant="secondary">
-                  {genreMovies[selectedGenre as keyof typeof genreMovies]?.length || 0} películas
+                  {genreLoading ? "..." : `${genreMovies?.length || 0} películas`}
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {genreMovies[selectedGenre as keyof typeof genreMovies]?.map((movie) => (
+              {genreLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p>Cargando películas...</p>
+                </div>
+              ) : genreError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-500 mb-4">Error: {genreError}</p>
+                  <Button onClick={() => setSelectedGenre("")}>Volver</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {genreMovies?.map((movie) => (
                   <Card key={movie.id} className="overflow-hidden">
                     <div className="aspect-[2/3] relative">
                       <img
@@ -1051,13 +614,18 @@ export default function PeliculitaApp() {
                     <CardContent className="p-3">
                       <h3 className="font-medium text-sm mb-1 line-clamp-2">{movie.title}</h3>
                       <p className="text-xs text-gray-600 mb-2">
-                        {movie.genre} • {movie.duration}
+                        {movie.genres?.name} • {movie.duration}
                       </p>
                       <p className="text-xs text-gray-700 line-clamp-2">{movie.description}</p>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  )) || (
+                    <div className="col-span-2 text-center py-8">
+                      <p className="text-muted-foreground">No hay películas de este género</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1108,8 +676,19 @@ export default function PeliculitaApp() {
           </div>
 
           {/* Movies Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {allMovies.map((movie) => (
+          {moviesLoading ? (
+            <div className="col-span-2 text-center py-8">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p>Cargando películas...</p>
+            </div>
+          ) : moviesError ? (
+            <div className="col-span-2 text-center py-8">
+              <p className="text-red-500 mb-4">Error al cargar películas: {moviesError}</p>
+              <Button onClick={() => window.location.reload()}>Reintentar</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {allMovies?.map((movie) => (
               <Card
                 key={movie.id}
                 className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -1139,15 +718,20 @@ export default function PeliculitaApp() {
                 <CardContent className="p-3">
                   <h3 className="font-medium text-sm mb-1 line-clamp-2">{movie.title}</h3>
                   <p className="text-xs text-muted-foreground mb-2">
-                    {movie.genre} • {movie.duration}
+                    {movie.genres?.name} • {movie.duration}
                   </p>
                   <Badge variant="outline" className="text-xs">
-                    {movie.mood}
+                    ⭐ {movie.rating}
                   </Badge>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              )) || (
+                <div className="col-span-2 text-center py-8">
+                  <p className="text-muted-foreground">No hay películas disponibles</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <BottomNavigation />
@@ -1234,8 +818,10 @@ export default function PeliculitaApp() {
                 <div>
                   <p className="text-sm font-medium">Reparto</p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedMovie.cast.slice(0, 3).join(", ")}
-                    {selectedMovie.cast.length > 3 && "..."}
+                    {selectedMovie.cast && selectedMovie.cast.length > 0 
+                      ? `${selectedMovie.cast.slice(0, 3).join(", ")}${selectedMovie.cast.length > 3 ? "..." : ""}`
+                      : "No disponible"
+                    }
                   </p>
                 </div>
               </div>
@@ -1276,11 +862,15 @@ export default function PeliculitaApp() {
           <div>
             <h2 className="text-lg font-semibold mb-3">Etiquetas</h2>
             <div className="flex flex-wrap gap-2">
-              {selectedMovie.tags.map((tag: string) => (
-                <Badge key={tag} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
+              {selectedMovie.tags && selectedMovie.tags.length > 0 ? (
+                selectedMovie.tags.map((tag: string) => (
+                  <Badge key={tag} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay etiquetas disponibles</p>
+              )}
             </div>
           </div>
 
@@ -1289,7 +879,7 @@ export default function PeliculitaApp() {
             <h2 className="text-lg font-semibold mb-3">Películas Similares</h2>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {allMovies
-                .filter((movie) => movie.id !== selectedMovie.id && movie.genre === selectedMovie.genre)
+                .filter((movie) => movie.id !== selectedMovie.id && movie.genres?.name === selectedMovie.genres?.name)
                 .slice(0, 4)
                 .map((movie) => (
                   <Card
@@ -1388,42 +978,9 @@ export default function PeliculitaApp() {
             </div>
           )}
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <Badge variant="secondary">
-                {moodMovies[selectedMood as keyof typeof moodMovies]?.length || 0} películas
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {moodMovies[selectedMood as keyof typeof moodMovies]?.map((movie) => (
-                <Card key={movie.id} className="overflow-hidden">
-                  <div className="aspect-[2/3] relative">
-                    <img
-                      src={movie.poster || "/placeholder.svg"}
-                      alt={movie.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-yellow-500 text-white">⭐ {movie.rating}</Badge>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="absolute bottom-2 right-2 w-8 h-8 rounded-full p-0 bg-green-500 hover:bg-green-600"
-                    >
-                      <Play className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <CardContent className="p-3">
-                    <h3 className="font-medium text-sm mb-1 line-clamp-2">{movie.title}</h3>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {movie.genre} • {movie.year}
-                    </p>
-                    <p className="text-xs text-gray-700 line-clamp-2">{movie.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">Funcionalidad de estados de ánimo no disponible</p>
+            <p className="text-sm text-gray-500">Esta función se actualizará próximamente</p>
           </div>
         </div>
         <BottomNavigation />

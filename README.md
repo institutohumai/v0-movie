@@ -1,9 +1,9 @@
-# Movie recommendation app
+# Remix of Movie recommendation a
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/ariel-humaicomars-projects/v0-movie-recommendation-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/n2ZmRXb69LA)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/julideangelis-projects/v0-remix-of-movie-recommendation-a)
+[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/XC9JgS5gw9C)
 
 ## Overview
 
@@ -14,13 +14,13 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 Your project is live at:
 
-**[https://vercel.com/ariel-humaicomars-projects/v0-movie-recommendation-app](https://vercel.com/ariel-humaicomars-projects/v0-movie-recommendation-app)**
+**[https://vercel.com/julideangelis-projects/v0-remix-of-movie-recommendation-a](https://vercel.com/julideangelis-projects/v0-remix-of-movie-recommendation-a)**
 
 ## Build your app
 
 Continue building your app on:
 
-**[https://v0.app/chat/projects/n2ZmRXb69LA](https://v0.app/chat/projects/n2ZmRXb69LA)**
+**[https://v0.app/chat/projects/XC9JgS5gw9C](https://v0.app/chat/projects/XC9JgS5gw9C)**
 
 ## How It Works
 
